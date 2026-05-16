@@ -5,6 +5,9 @@ const normalizeDate = date => {
     return new Date(date).toISOString().split('T')[0];
 }
 
+const allowedStatus = ['pending', 'completed'];
+const allowedPriority = ['low', 'high', 'medium'];
+
 exports.getAllTasks = async (req, res) => {
     try{
         const userId = req.user.id
@@ -21,6 +24,12 @@ exports.createTasks = async (req, res) => {
         const {title, description, priority, status,  due_date} = req.body
         if(!title || !priority || !status || !due_date){
             return res.status(400).json({message: "Missing Required Fields"});
+        }
+        if(!allowedStatus.includes(status)){
+            return res.status(400).json({message: "Invalid Status"});
+        }
+        if(!allowedPriority.includes(priority)){
+            return res.status(400).json({message: "Invalid priority"});
         }
         const formatedDate = normalizeDate(due_date);
         const result = await db.query(
@@ -42,6 +51,12 @@ exports.updateTasks = async (req, res) => {
         const { title, description, priority, status, due_date } = req.body
         if (!title || !priority || !status || !due_date) {
             return res.status(400).json({ message: "Missing Required Fields" });
+        }
+        if(!allowedStatus.includes(status)){
+            return res.status(400).json({message: "Invalid status"});
+        }
+        if(!allowedPriority.includes(priority)){
+            return res.status(400).json({message: "Invalid priority"});
         }
         const formatedDate = normalizeDate(due_date)
         const result = await db.query(

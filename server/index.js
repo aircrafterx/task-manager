@@ -5,6 +5,7 @@ const taskRoutes = require("./routes/tasks");
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 
+require("./cron/taskScheduler")
 const app = express();
 app.use(express.json());
 app.use(cors());
