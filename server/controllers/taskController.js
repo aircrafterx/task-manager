@@ -7,6 +7,7 @@ const normalizeDate = date => {
 
 const allowedStatus = ['pending', 'completed'];
 const allowedPriority = ['low', 'high', 'medium'];
+const today = new Date().toISOString().split("T")[0];
 
 exports.getAllTasks = async (req, res) => {
     try{
@@ -32,6 +33,10 @@ exports.createTasks = async (req, res) => {
             return res.status(400).json({message: "Invalid priority"});
         }
         const formatedDate = normalizeDate(due_date);
+
+        if(formatedDate < today){
+            return res.status(400).json({message: "Invalid duedate"});
+        }
         const result = await db.query(
             `INSERT INTO tasks(title, description, priority, status, due_date, user_id)
              VALUES($1, $2, $3, $4, $5, $6)
@@ -59,6 +64,9 @@ exports.updateTasks = async (req, res) => {
             return res.status(400).json({message: "Invalid priority"});
         }
         const formatedDate = normalizeDate(due_date)
+        if(formatedDate < today){
+            return res.status(400).json({message: "Invalid duedate"});
+        }
         const result = await db.query(
             `UPDATE tasks 
             SET 
