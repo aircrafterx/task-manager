@@ -15,15 +15,35 @@ const transporter = nodemailer.createTransport({
 exports.register = async (req, res) => {
     try {
         let { email, password } = req.body;
+
         if (!email) return res.status(400).json({ message: "No email Provided" });        
         email = email.toLowerCase().trim();
-
         if (!password || password.length < 6) return res.status(400).json({ message: "Weak Password" });
 
         const hashedPsswd = await bcrypt.hash(password, 10);
         const verificationToken = crypto.randomBytes(32).toString("hex");
+        
+        let result = await db.query(`
+                UPDATE users
+                SET
+                    password = $1,
+                    verification_token = $2,
+                    is_verified = false,
+                    is_deleted = false
+                WHERE email = $3
+                AND is_deleted = true
+                RETURNING id, email
+            `, [hashedPsswd, verificationToken, email]
+        );
 
-        const result = await db.query(`INSERT INTO users(email, password, verification_token) VALUES($1, $2, $3) RETURNING id, email`, [email, hashedPsswd, verificationToken]);
+        if(result.rows.length === 0) {
+            result = await db.query(`
+                INSERT INTO users(email, password, verification_token) 
+                VALUES($1, $2, $3) 
+                RETURNING id, email`, [email, hashedPsswd, verificationToken]
+            );
+        } 
+
         const verificationUrl = `${process.env.SERVER_URL}/api/auth/verify/${verificationToken}`;
 
         const emailHtml = `
@@ -92,7 +112,10 @@ exports.verifyRegister = async (req, res) => {
                 SET
                     is_verified = TRUE,
                     verification_token = NULL
-                WHERE verification_token = $1
+                WHERE 
+                    verification_token = $1
+                    AND is_deleted = false
+                    AND is_verified = false
                 RETURNING id;
             `, [verificationToken]
         );
@@ -103,7 +126,7 @@ exports.verifyRegister = async (req, res) => {
             );
         }
 
-        return res.redirect(`${process.env.CLIENT_URL}/auth?verified=true`);
+        return res.redirect(`${process.env.CLIENT_URL}/auth?verification=success`);
     } catch(err){
         console.log(err);
         return res.redirect(
@@ -121,7 +144,18 @@ exports.login = async (req, res) => {
 
         email = email.toLowerCase().trim();
 
-        const dbUser = await db.query(`SELECT id, email, password, is_verified FROM users WHERE email = $1`, [email]);
+        const dbUser = await db.query(`
+            SELECT 
+                id, 
+                email, 
+                password, 
+                is_verified 
+            FROM users 
+            WHERE 
+                email = $1
+                AND is_deleted = false
+                `, [email]
+        );
 
         if (dbUser.rows.length === 0) {
             return res.status(400).json({message: "Invalid Credentials"});
@@ -129,7 +163,7 @@ exports.login = async (req, res) => {
             const user = dbUser.rows[0];
             
             if(!user.is_verified){
-                return res.status(400).send({message: "Please verify your email"});
+                return res.status(400).json({message: "Please verify your email"});
             }
 
             const isPssdMatched = await bcrypt.compare(password, user.password);

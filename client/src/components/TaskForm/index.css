@@ -1,0 +1,12 @@
+.react-datepicker {
+    font-family: Arial, sans-serif;
+    width: 100%;
+}
+
+.react-datepicker__month-container {
+    width: 100%;
+}
+
+.react-datepicker-popper {
+    z-index: 9999 !important;
+}

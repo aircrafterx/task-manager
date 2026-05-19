@@ -13,9 +13,24 @@ const limiter = rateLimit({
     legacyHeaders: false
 });
 
-const authLimiter = rateLimit({
+const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5
+    max: 15,
+    message: {
+        message: "Too many login attempts. Please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 7,
+    message: {
+        message: "Too many registration attempts. Please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 
 const taskRoutes = require("./routes/tasks");
@@ -32,8 +47,8 @@ app.use(express.json());
 app.use(cors());
 app.use(limiter);
 
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", authLimiter);
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
 
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`);

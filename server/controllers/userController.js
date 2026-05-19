@@ -31,15 +31,29 @@ exports.deleteUser = async (req, res) => {
         const {password} = req.body;
         if (!password) return res.status(400).json({ message: "Password Required" });
         const userId = req.user.id;
-        const dbUser = await db.query(`SELECT password FROM users WHERE id = $1`, [userId]);
+        const dbUser = await db.query(`
+            SELECT password 
+            FROM users 
+            WHERE 
+                id = $1
+                AND is_deleted = false
+            `, [userId]
+        );
         if (dbUser.rows.length === 0) {
             return res.status(404).json({message: "User NOt Found"});
         } else {
             const user = dbUser.rows[0];
             const isPssdMatched = await bcrypt.compare(password, user.password);
             if (isPssdMatched) {
-                const result = await db.query(`DELETE FROM users WHERE id = $1`, [userId]);
-                return res.send({ message: "Account Deleted" });
+                const result = await db.query(`
+                    UPDATE users
+                    SET 
+                        is_deleted = true,
+                        is_verified = false,
+                        verification_token = null
+                    WHERE id = $1`, [userId]
+                );
+                return res.status(200).json({ message: "Account Deactivated!" });
             } else {
                 return res.status(400).json({message: "Invalid Password"});
             }
