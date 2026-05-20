@@ -27,7 +27,7 @@ class RegisterForm extends Component{
             return;
         }
         
-        const url = `${process.env.REACT_APP_API_URL}/api/auth//register`;
+        const url = `${process.env.REACT_APP_API_URL}/api/auth/register`;
         const options = {
             method: "POST",
             headers: {
