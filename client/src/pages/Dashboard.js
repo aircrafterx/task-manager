@@ -13,7 +13,7 @@ class Dashboard extends Component{
 
     getTaskList = async () => {
         const token = Cookies.get("token");
-        const url = 'http://localhost:5000/api/tasks';
+        const url = `${process.env.REACT_APP_API_URL}/api/tasks`;
         const options = {
             method: "GET",
             headers: {

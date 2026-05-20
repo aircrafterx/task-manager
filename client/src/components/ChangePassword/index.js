@@ -27,7 +27,7 @@ class ChangePassword extends Component{
             return;
         }
 
-        const url = 'http://localhost:5000/api/user';
+        const url = `${process.env.REACT_APP_API_URL}/api/user`;
         const options = {
             method: "PUT",
             headers: {

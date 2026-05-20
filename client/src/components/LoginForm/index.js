@@ -34,7 +34,7 @@ class LoginForm extends Component{
     onSubmitForm = async event => {
         event.preventDefault();
         const {email, password} = this.state;
-        const url = 'http://localhost:5000/api/auth/login';
+        const url = `${process.env.REACT_APP_API_URL}/api/auth/login`;
         const options = {
             method: "POST",
             headers: {

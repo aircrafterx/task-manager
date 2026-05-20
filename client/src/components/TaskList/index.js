@@ -7,7 +7,7 @@ import TaskItem from "../TaskItem"
 class TaskList extends Component{
     deleteTask = async id => {
         const token = Cookies.get("token");
-        const url = `http://localhost:5000/api/tasks/${id}`;
+        const url = `${process.env.REACT_APP_API_URL}/api/tasks/${id}`;
         const options = {
             method: "DELETE",
             headers:{

@@ -71,11 +71,11 @@ class TaskForm extends Component{
 
         const {editingTask, stopEdit, refreshList} = this.props;
 
-        let url = 'http://localhost:5000/api/tasks';
+        let url = `${process.env.REACT_APP_API_URL}/api/tasks`;
         let method = "POST";
 
         if(editingTask){
-            url = `http://localhost:5000/api/tasks/${editingTask.id}`;
+            url = `${process.env.REACT_APP_API_URL}/api/tasks/${editingTask.id}`;
             method = "PUT";
         }
         
