@@ -7,7 +7,7 @@ import {toast} from 'react-hot-toast'
 import './index.css'
 
 class TaskForm extends Component{
-    state = { title: "", description: "", priority: "", status: "", dueDate: "", errMsg: '' }
+    state = { title: "", description: "", priority: "", status: "", dueDate: "", errMsg: '', loading: false }
 
     componentDidUpdate(prevProps){
         const {editingTask} = this.props
@@ -24,46 +24,48 @@ class TaskForm extends Component{
     }
 
     onChangeTitle = event => {
-        this.setState({ title: event.target.value });
+        this.setState({ title: event.target.value, errMsg: '' });
     }
 
     onChangeDesc = event => {
-        this.setState({ description: event.target.value });
+        this.setState({ description: event.target.value, errMsg: '' });
     }
 
     onChangePriority = event => {
-        this.setState({ priority: event.target.value });
+        this.setState({ priority: event.target.value, errMsg: '' });
     }
 
     onChangeStatus = event => {
-        this.setState({ status: event.target.value });
+        this.setState({ status: event.target.value, errMsg: '' });
     }
 
     onChangeDue = event => {
-        this.setState({ dueDate: event.target.value });
+        this.setState({ dueDate: event.target.value, errMsg: '' });
     }
 
     onSubmitForm = async event => {
         event.preventDefault();
+        if(this.state.loading) return;
+        this.setState({loading: true, errMsg: ''});
         console.log("task submit triggered");
         const {title, description, priority, status, dueDate} = this.state;
         if(!title){
-            this.setState({errMsg: "Please Provide Valid Title!"});
+            this.setState({errMsg: "Please Provide Valid Title!", loading: false});
             return;
         }
 
         if (!priority) {
-            this.setState({ errMsg: "Please Select Valid Priority!" });
+            this.setState({ errMsg: "Please Select Valid Priority!", loading: false });
             return;
         }
 
         if(!status){
-            this.setState({ errMsg: "Please Select Valid Status!" });
+            this.setState({ errMsg: "Please Select Valid Status!", loading: false });
             return;
         }
 
         if(!dueDate){
-            this.setState({ errMsg: "Please Provide Valid Due Date!" });
+            this.setState({ errMsg: "Please Provide Valid Due Date!", loading: false });
             return;
         }
 
@@ -121,6 +123,8 @@ class TaskForm extends Component{
             }
         } catch (err) {
             toast.error("Network error. Please try again");
+        }finally{
+            this.setState({loading: false});
         }
     }
 
@@ -144,6 +148,7 @@ class TaskForm extends Component{
                             type="text"
                             value={title}
                             onChange={this.onChangeTitle}
+                            disabled={this.state.loading}
                             required
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
           focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -157,6 +162,7 @@ class TaskForm extends Component{
                         <textarea
                             value={description}
                             onChange={this.onChangeDesc}
+                            disabled={this.state.loading}
                             rows="3"
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
           focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -172,6 +178,7 @@ class TaskForm extends Component{
                             <select
                                 onChange={this.onChangePriority}
                                 value={priority}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -190,6 +197,7 @@ class TaskForm extends Component{
                             <select
                                 onChange={this.onChangeStatus}
                                 value={status}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -209,6 +217,7 @@ class TaskForm extends Component{
 
                         <DatePicker
                             selected={dueDate ? new Date(dueDate) : null}
+                            disabled={this.state.loading}
                             onChange={(date) =>
                                 this.setState({
                                     dueDate: date.toISOString().split("T")[0]
@@ -238,10 +247,31 @@ class TaskForm extends Component{
 
                     <button
                         type="submit"
-                        className="w-full bg-gray-900 text-white py-2 rounded-md text-sm font-medium
-        hover:bg-gray-800 transition"
+                        disabled={this.state.loading}
+                        className="
+                            w-full
+                            bg-gray-900
+                            text-white
+                            py-2
+                            rounded-md
+                            text-sm
+                            font-medium
+                            hover:bg-gray-800
+                            transition
+                            disabled:bg-gray-500
+                            disabled:text-gray-200
+                            disabled:cursor-not-allowed
+                        "
                     >
-                        {editingTask ? "Update Task" : "Add Task"}
+                        {
+                            this.state.loading
+                                ? editingTask
+                                    ? "Updating Task..."
+                                    : "Creating Task..."
+                                : editingTask
+                                    ? "Update Task"
+                                    : "Add Task"
+                        }
                     </button>
 
                     {errMsg && (

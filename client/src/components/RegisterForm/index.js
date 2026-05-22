@@ -3,27 +3,31 @@ import Cookies from 'js-cookie'
 import {toast} from "react-hot-toast"
 
 class RegisterForm extends Component{
-    state={email:"", password: "", confirmPassword: "", errMsg: "", showSuccessModal: false}
+    state={email:"", password: "", confirmPassword: "", errMsg: "", showSuccessModal: false, loading: false}
 
     onChangeEmail = event => {
-        this.setState({ email: event.target.value });
+        this.setState({ email: event.target.value, errMsg: '' });
     }
 
     onChangePassword = event => {
-        this.setState({ password: event.target.value });
+        this.setState({ password: event.target.value, errMsg: '' });
     }
 
     onChangeConfirmPassword = event => {
-        this.setState({confirmPassword: event.target.value});
+        this.setState({confirmPassword: event.target.value, errMsg: ''});
     }
 
     onSubmitForm = async event => {
         event.preventDefault();
 
+        if(this.state.loading) return;
+
+        this.setState({loading: true});
+
         const {email, password, confirmPassword} = this.state;
 
         if(password !== confirmPassword){
-            this.setState({errMsg: 'password is not matched to confirm password'});
+            this.setState({errMsg: 'password is not matched to confirm password', loading: false});
             return;
         }
         
@@ -62,13 +66,15 @@ class RegisterForm extends Component{
                     password: "",
                     confirmPassword: ""
                 });
-                toast.success("Remider email sent.")
+                toast.success("Verification email sent.")
             } else {
                 this.setState({ errMsg: data.message });
             }
             this.setState({ email: "", password: "", confirmPassword: "" });
         }catch(err){
             toast.error("Network error. Please try again");
+        }finally{
+            this.setState({loading: false});
         }
     }
 
@@ -134,6 +140,7 @@ class RegisterForm extends Component{
                         <input
                             type="email"
                             value={this.state.email}
+                            disabled={this.state.loading}
                             onChange={this.onChangeEmail}
                             required
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -147,6 +154,7 @@ class RegisterForm extends Component{
                         <input
                             type="password"
                             value={this.state.password}
+                            disabled={this.state.loading}
                             onChange={this.onChangePassword}
                             required
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -161,6 +169,7 @@ class RegisterForm extends Component{
                             type="password"
                             value={this.state.confirmPassword}
                             onChange={this.onChangeConfirmPassword}
+                            disabled={this.state.loading}
                             required
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
                         />
@@ -168,9 +177,27 @@ class RegisterForm extends Component{
 
                     <button
                         type="submit"
-                        className="w-full bg-gray-900 text-white py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition"
+                        disabled={this.state.loading}
+                        className="
+                            w-full
+                            bg-gray-900
+                            text-white
+                            py-2
+                            rounded-md
+                            text-sm
+                            font-medium
+                            hover:bg-gray-800
+                            transition
+                            disabled:bg-gray-500
+                            disabled:text-gray-200
+                            disabled:cursor-not-allowed
+                        "
                     >
-                        Create Account
+                        {
+                            this.state.loading
+                                ? "Creating Account..."
+                                : "Create Account"
+                        }
                     </button>
 
                     {errMsg && (

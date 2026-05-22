@@ -3,27 +3,29 @@ import Cookies from 'js-cookie'
 import {toast} from 'react-hot-toast'
 
 class ChangePassword extends Component{
-    state={oldPassword: '', newPassword: '', confirmPassword: '', errMsg: ''}
+    state={oldPassword: '', newPassword: '', confirmPassword: '', errMsg: '', loading: false}
 
     onChangeOld = event => {
-        this.setState({oldPassword: event.target.value})
+        this.setState({oldPassword: event.target.value, errMsg: ''})
     }
 
     onChangeNew = event => {
-        this.setState({newPassword: event.target.value})
+        this.setState({newPassword: event.target.value, errMsg: ''})
     }
 
     onChangeConfirm = event => {
-        this.setState({confirmPassword: event.target.value})
+        this.setState({confirmPassword: event.target.value, errMsg: ''})
     }
 
     onSubmitForm = async event => {
         event.preventDefault();
+        if(this.state.loading) return;
+        this.setState({loading: true});
         const {oldPassword, newPassword, confirmPassword} = this.state
         const token = Cookies.get('token');
 
         if(newPassword !== confirmPassword){
-            this.setState({errMsg: 'new password is not matched to confirm password'})
+            this.setState({errMsg: 'new password is not matched to confirm password', loading: false})
             return;
         }
 
@@ -66,6 +68,8 @@ class ChangePassword extends Component{
             }
         }catch(err){
             toast.error("Network error. Please try again");
+        }finally{
+            this.setState({loading: false});
         }
     }
 
@@ -91,6 +95,7 @@ class ChangePassword extends Component{
                                 type="password"
                                 value={oldPassword}
                                 onChange={this.onChangeOld}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -105,6 +110,7 @@ class ChangePassword extends Component{
                                 type="password"
                                 value={newPassword}
                                 onChange={this.onChangeNew}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -119,6 +125,7 @@ class ChangePassword extends Component{
                                 type="password"
                                 value={confirmPassword}
                                 onChange={this.onChangeConfirm}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -129,6 +136,7 @@ class ChangePassword extends Component{
 
                             <button
                                 type="button"
+                                disabled={this.state.loading}
                                 className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                                 onClick={onClickCancelForChange}
                             >
@@ -137,9 +145,27 @@ class ChangePassword extends Component{
 
                             <button
                                 type="submit"
-                                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                                disabled={this.state.loading}
+                                className="
+                                    px-4
+                                    py-2
+                                    bg-gray-900
+                                    text-white
+                                    rounded-md
+                                    text-sm
+                                    font-medium
+                                    hover:bg-gray-800
+                                    transition
+                                    disabled:bg-gray-500
+                                    disabled:text-gray-200
+                                    disabled:cursor-not-allowed
+                                "
                             >
-                                Update Password
+                                {
+                                    this.state.loading
+                                        ? "Updating Password..."
+                                        : "Update Password"
+                                }
                             </button>
 
                         </div>

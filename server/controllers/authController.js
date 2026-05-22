@@ -2,21 +2,9 @@ const db = require("../db");
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // SSL (IMPORTANT for 465)
-
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-
-    connectionTimeout: 20000,
-    socketTimeout: 20000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.register = async (req, res) => {
     try {
@@ -89,16 +77,25 @@ exports.register = async (req, res) => {
             </div>
             `;
 
-        await transporter.sendMail({
-            from:
-                `"AircrafterX Notifications" <${process.env.EMAIL_USER}>`,
-
+        const mailRes = await resend.emails.send({
+            from: `AircrafterX <${process.env.AUTH_EMAIL}>`,
             to: email,
-
             subject: "Verify Your Email",
+            replyTo: "support@aircrafterx.cloud",
+            html: emailHtml,
+            text: `
+                Hello,
 
-            html: emailHtml
+                Thank you for creating an account on AircrafterX.
+
+                Please verify your email address.
+
+                Regards,
+                AircrafterX Team
+            `
         });
+
+        console.log(mailRes)
 
         return res.status(201).json({ message: "Registration Successful. Please Verify your email." });
     } catch (err) {

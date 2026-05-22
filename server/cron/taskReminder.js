@@ -1,22 +1,10 @@
 const cron = require("node-cron");
 const db = require("../db");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // SSL (IMPORTANT for 465)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-
-    connectionTimeout: 20000,
-    socketTimeout: 20000,
-});
-
-cron .schedule("0 9 * * *", async () => {
+cron.schedule("0 9 * * *", async () => {
     try {
         console.log("Running task remider sheduling...");
 
@@ -105,7 +93,7 @@ cron .schedule("0 9 * * *", async () => {
                     </p>
 
                     <a
-                        href="http://localhost:3000"
+                        href="${process.env.CLIENT_URL}"
                         style="
                             display: inline-block;
                             background-color: #dc2626;
@@ -130,24 +118,41 @@ cron .schedule("0 9 * * *", async () => {
 
                 </div>
 
-        </div >
+            </div >
         `;
 
 
-            await transporter.sendMail({
-                from: `"AircrafterX Notifications" <${process.env.EMAIL_USER}>`,
+            const mailRes = await resend.emails.send({
+                from: `AircrafterX <${process.env.REMINDER_EMAIL}>`,
                 to: task.email,
                 subject: "Task due Reminder",
-                html: emailHtml
+                html: emailHtml,
+                replyTo: "support@aircrafterx.cloud",
+                text: `
+                    Hello,
+
+                    This is a reminder that one of your tasks is due soon in AircrafterX Task Manager.
+
+                    Please login to your dashboard to review and complete your task.
+
+                    If you did not expect this reminder, you can safely ignore this email.
+
+                    Regards,
+                    AircrafterX Team
+                `
             });
 
-            await db.query(`
-                UPDATE tasks
-                SET reminder_sent = true
-                WHERE id = $1
-            `, [task.id]);
+            console.log(mailRes);
 
-            console.log('Reminder sent for task ', task.id);
+            if(!mailRes.error){
+                await db.query(`
+                    UPDATE tasks
+                    SET reminder_sent = true
+                    WHERE id = $1
+                `, [task.id]);
+
+                console.log('Reminder sent for task ', task.id);
+            }
         }
 
         console.log("Remider Sent..");

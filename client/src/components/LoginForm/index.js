@@ -3,7 +3,7 @@ import Cookies from 'js-cookie'
 import {toast} from 'react-hot-toast'
 
 class LoginForm extends Component{
-    state={email: "", password: "", errMsg: ""};
+    state={email: "", password: "", errMsg: "", loading: false};
 
     componentDidMount(){
         const token = Cookies.get("token");
@@ -24,15 +24,17 @@ class LoginForm extends Component{
     }
 
     onChangeEmail = event => {
-        this.setState({email: event.target.value});
+        this.setState({email: event.target.value, errMsg: ''});
     }
 
     onChangePassword = event => {
-        this.setState({password: event.target.value});
+        this.setState({password: event.target.value, errMsg: ''});
     }
 
     onSubmitForm = async event => {
         event.preventDefault();
+        if(this.state.loading) return;
+        this.setState({loading: true})
         const {email, password} = this.state;
         const url = `${process.env.REACT_APP_API_URL}/api/auth/login`;
         const options = {
@@ -78,6 +80,8 @@ class LoginForm extends Component{
             this.setState({ email: "", password: "" });
         }catch(err){
             toast.error("Network error. Please try again");
+        }finally{
+            this.setState({loading: false});
         }
     }
 
@@ -94,6 +98,7 @@ class LoginForm extends Component{
                         type="email"
                         value={this.state.email}
                         onChange={this.onChangeEmail}
+                        disabled={this.state.loading}
                         required
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
                     />
@@ -107,6 +112,7 @@ class LoginForm extends Component{
                         type="password"
                         value={this.state.password}
                         onChange={this.onChangePassword}
+                        disabled={this.state.loading}
                         required
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
                     />
@@ -114,9 +120,24 @@ class LoginForm extends Component{
 
                 <button
                     type="submit"
-                    className="w-full bg-gray-900 text-white py-2 rounded-md mb-4 text-sm font-medium hover:bg-gray-800 transition"
+                    disabled={this.state.loading}
+                    className="
+                        w-full
+                        bg-gray-900
+                        text-white
+                        py-2
+                        rounded-md
+                        mb-4
+                        text-sm
+                        font-medium
+                        hover:bg-gray-800
+                        transition
+                        disabled:bg-gray-500
+                        disabled:text-gray-200
+                        disabled:cursor-not-allowed
+                    "
                 >
-                    Sign In
+                    {this.state.loading ? "Signing In..." : "Sign In"}
                 </button>
 
                 {errMsg && (

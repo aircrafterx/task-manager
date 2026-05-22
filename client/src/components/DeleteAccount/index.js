@@ -3,19 +3,21 @@ import Cookies from 'js-cookie'
 import {toast} from 'react-hot-toast'
 
 class DeleteAccount extends Component{
-    state={password : '', errMsg: ''}
+    state={password : '', errMsg: '', loading: false}
 
     onChangePassword = event => {
-        this.setState({password: event.target.value})
+        this.setState({password: event.target.value, errMsg: ''})
     }
 
     onSubmitForm = async event => {
         event.preventDefault()
+        if(this.state.loading) return;
+        this.setState({loading: true, errMsg: ''});
         const {password} = this.state
         const token = Cookies.get('token')
 
         if(!password){
-            this.setState({errMsg: "Enter Valid Password"})
+            this.setState({errMsg: "Enter Valid Password", loading: false})
             return;
         }
 
@@ -58,6 +60,8 @@ class DeleteAccount extends Component{
             }
         }catch(err){
             toast.error("Network error. Please try again");
+        }finally{
+            this.setState({loading: false});
         }
     }
 
@@ -92,6 +96,7 @@ class DeleteAccount extends Component{
                                 type="password"
                                 value={password}
                                 onChange={this.onChangePassword}
+                                disabled={this.state.loading}
                                 required
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -102,6 +107,7 @@ class DeleteAccount extends Component{
 
                             <button
                                 type="button"
+                                disabled={this.state.loading}
                                 className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                                 onClick={onClickCancelForDelete}
                             >
@@ -110,9 +116,26 @@ class DeleteAccount extends Component{
 
                             <button
                                 type="submit"
-                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                                disabled={this.state.loading}
+                                className="
+                                    px-4
+                                    py-2
+                                    text-sm
+                                    bg-red-600
+                                    text-white
+                                    rounded-md
+                                    hover:bg-red-700
+                                    transition
+                                    disabled:bg-red-200
+                                    disabled:text-white
+                                    disabled:cursor-not-allowed
+                                "
                             >
-                                Delete Account
+                                {
+                                    this.state.loading
+                                        ? "Deactivating..."
+                                        : "Deactivate Account"
+                                }
                             </button>
 
                         </div>
