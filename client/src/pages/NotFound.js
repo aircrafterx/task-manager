@@ -7,9 +7,9 @@ const NotFound = () => {
     const verify = () => {
         const token = Cookies.get("token");
         if(!token){
-            navigate("/auth");
+            navigate("/task-manager/auth");
         }else{
-            navigate("/dashboard");
+            navigate("/task-manager/dashboard");
         }   
     }
 

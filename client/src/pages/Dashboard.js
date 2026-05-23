@@ -3,6 +3,7 @@ import Cookies from 'js-cookie'
 import Header from '../components/Header'
 import TaskForm from '../components/TaskForm'
 import TaskList from '../components/TaskList'
+import {toast} from 'react-hot-toast'
 
 class Dashboard extends Component{
     state = { editingTask: null, tasksList: [] }
@@ -27,8 +28,8 @@ class Dashboard extends Component{
 
         if (response.status === 401) {
             Cookies.remove("token");
-            alert("Session expired. Please login again.");
-            window.location.href = "/auth";
+            toast.error("Session expired. Please login again.");
+            window.location.href = "/task-manager/auth";
         }
 
         if (response.ok) {
@@ -59,7 +60,7 @@ class Dashboard extends Component{
     authorizeToken = () =>{
         const token = Cookies.get("token")
         if(token === undefined){
-            window.location.href = "/auth"
+            window.location.href = "/task-manager/auth"
         }
     }
 

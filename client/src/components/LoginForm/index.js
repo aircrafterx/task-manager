@@ -53,7 +53,7 @@ class LoginForm extends Component{
                 toast.error("Session expired. Please login again");
                 Cookies.remove("token");
                 setTimeout(() => {
-                    window.location.href = "/auth";
+                    window.location.href = "/task-manager/auth";
                 }, 2000);
                 return;
             }
@@ -72,7 +72,7 @@ class LoginForm extends Component{
                 });
 
                 const { navigate } = this.props;
-                navigate("/dashboard", { replace: true });
+                navigate("/task-manager/dashboard", { replace: true });
                 toast.success("Welcome back!");
             } else {
                 this.setState({ errMsg: data.message });

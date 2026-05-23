@@ -18,7 +18,7 @@ class Header extends Component{
             }
         } catch (err) {
             Cookies.remove("token");
-            window.location.href = "/auth";
+            window.location.href = "/task-manager/auth";
         }
     }
 
@@ -40,7 +40,7 @@ class Header extends Component{
 
     onClickLogout = () => {
         Cookies.remove("token");
-        window.location.href = "/auth";
+        window.location.href = "/task-manager/auth";
         toast.success("Logged out successfully.");
     }
 

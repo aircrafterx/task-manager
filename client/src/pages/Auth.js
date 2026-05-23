@@ -9,7 +9,7 @@ class Auth extends Component{
     componentDidMount(){
             const token = Cookies.get("token");
             if(token !== undefined){
-                window.location.href = "/dashboard";
+                window.location.href = "/task-manager/dashboard";
             }
         }
 

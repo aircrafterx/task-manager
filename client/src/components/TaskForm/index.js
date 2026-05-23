@@ -98,7 +98,7 @@ class TaskForm extends Component{
                 toast.error("Session expired. Please login again");
                 Cookies.remove("token");
                 setTimeout(() => {
-                    window.location.href = "/auth";
+                    window.location.href = "/task-manager/auth";
                 }, 2000);
                 return;
             }

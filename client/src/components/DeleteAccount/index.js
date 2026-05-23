@@ -39,7 +39,7 @@ class DeleteAccount extends Component{
                 toast.error("Session expired. Please login again");
                 Cookies.remove("token");
                 setTimeout(() => {
-                    window.location.href = "/auth";
+                    window.location.href = "/task-manager/auth";
                 }, 2000);
                 return;
             }
@@ -53,7 +53,7 @@ class DeleteAccount extends Component{
                 toast.success("Account deactivated successfully.");
                 Cookies.remove('token');
                 setTimeout(() => {
-                    window.location.href = '/auth';
+                    window.location.href = '/task-manager/auth';
                 }, 2000);
             } else {
                 this.setState({ errMsg: data.message })
