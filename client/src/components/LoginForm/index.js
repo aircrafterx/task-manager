@@ -8,7 +8,7 @@ class LoginForm extends Component{
     componentDidMount(){
         const token = Cookies.get("token");
         if(token !== undefined){
-            window.location.href = "/dashboard";
+            window.location.href = "/task-manager/dashboard";
         }
 
         const params = new URLSearchParams(window.location.search);
@@ -20,7 +20,7 @@ class LoginForm extends Component{
 
         if(verification === "error") toast.error("Verification failed. Please try again.");
 
-        window.history.replaceState({}, document.title, "/auth");
+        window.history.replaceState({}, document.title, "/task-manager/auth");
     }
 
     onChangeEmail = event => {
