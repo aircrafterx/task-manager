@@ -13,9 +13,9 @@ function App() {
         <Toaster position='bottom-right' toastOptions={{duration: 5000,}}/>
 
         <Routes>
-          <Route path="/" element={token ? <Navigate to="/dashboard" /> : <Navigate to="auth" />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/task-manager" element={token ? <Navigate to="/task-manager/dashboard" /> : <Navigate to="/task-manager/auth" />} />
+          <Route path="/task-manager/auth" element={<Auth />} />
+          <Route path="/task-manager/dashboard" element={<Dashboard />} />
           <Route path="/not-found" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/not-found" />} />
         </Routes>
