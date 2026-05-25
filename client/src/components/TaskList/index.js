@@ -44,7 +44,8 @@ class TaskList extends Component{
     }
 
     render() {
-        const { startEdit, tasksList } = this.props;
+        const { startEdit, tasksList, statusFilter, priorityFilter } = this.props;
+        const filtersApplied = (statusFilter !== "") || (priorityFilter !== "");
         return (
             <div>
 
@@ -54,7 +55,10 @@ class TaskList extends Component{
 
                 {tasksList.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                        No tasks created yet.
+                        { filtersApplied     
+                            ? "No tasks match current filters."
+                            : "No tasks created yet."
+                        }
                     </p>
                 ) : (
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">

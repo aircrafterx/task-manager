@@ -5,14 +5,43 @@ const normalizeDate = date => {
     return new Date(date).toISOString().split('T')[0];
 }
 
-const allowedStatus = ['pending', 'completed'];
+const allowedStatus = ['pending', 'completed', 'overdue'];
 const allowedPriority = ['low', 'high', 'medium'];
+const allowedSort = ['due_date', 'title'];
+const allowedSortOrder = ['asc', 'desc'];
 const today = new Date().toISOString().split("T")[0];
 
 exports.getAllTasks = async (req, res) => {
     try{
-        const userId = req.user.id
-        const result = await db.query("SELECT id, title, description, priority, status, due_date FROM tasks WHERE user_id = $1 AND is_deleted = false", [userId]);
+        let {status, priority, sortBy, sortOrder} = req.query;
+        const userId = req.user.id;
+
+        let selectTasks = `
+            SELECT id, title, description, priority, status, due_date 
+            FROM tasks 
+            WHERE user_id = $1
+            AND is_deleted = false
+        `;
+        let params = [userId];
+
+        if(allowedStatus.includes(status)){
+            selectTasks += ` AND status = $${params.length + 1}`;
+            params.push(status);
+        }
+
+        if(allowedPriority.includes(priority)){
+            selectTasks += ` AND priority = $${params.length + 1}`;
+            params.push(priority);
+        }
+
+        if(!allowedSortOrder.includes(sortOrder)) sortOrder = 'asc';
+
+        if(allowedSort.includes(sortBy)){
+            if (sortBy === 'title') selectTasks += ` ORDER BY LOWER(${sortBy}) ${sortOrder}`;
+            else selectTasks += ` ORDER BY ${sortBy} ${sortOrder}`;
+        }
+
+        const result = await db.query(selectTasks, params);
         res.json(result.rows);
     }catch(err){
         res.status(500).send({message: "Server Error"});
@@ -26,7 +55,7 @@ exports.createTasks = async (req, res) => {
         if(!title || !priority || !status || !due_date){
             return res.status(400).json({message: "Missing Required Fields"});
         }
-        if(!allowedStatus.includes(status)){
+        if(!allowedStatus.includes(status) || status === 'overdue'){
             return res.status(400).json({message: "Invalid Status"});
         }
         if(!allowedPriority.includes(priority)){
@@ -57,7 +86,7 @@ exports.updateTasks = async (req, res) => {
         if (!title || !priority || !status || !due_date) {
             return res.status(400).json({ message: "Missing Required Fields" });
         }
-        if(!allowedStatus.includes(status)){
+        if(!allowedStatus.includes(status) || status === 'overdue'){
             return res.status(400).json({message: "Invalid status"});
         }
         if(!allowedPriority.includes(priority)){

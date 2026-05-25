@@ -1,20 +1,49 @@
 import { Component } from "react";
 import Cookies from 'js-cookie'
+import { toast } from 'react-hot-toast'
+
 import Header from '../components/Header'
 import TaskForm from '../components/TaskForm'
 import TaskList from '../components/TaskList'
-import {toast} from 'react-hot-toast'
+import TaskFilters from '../components/TaskFilters'
+
 
 class Dashboard extends Component{
-    state = { editingTask: null, tasksList: [] }
+    state = { editingTask: null, tasksList: [], statusFilter: '', priorityFilter: '', sortBy: '', sortOrder: '' }
     
     componentDidMount(){
         this.getTaskList();
     }
 
     getTaskList = async () => {
+        const {statusFilter, priorityFilter, sortBy, sortOrder} = this.state;
+        const allowedStatus = ['pending', 'completed', 'overdue'];
+        const allowedPriority = ['low', 'high', 'medium'];
+        const allowedSort = ['due_date', 'title'];
+        const allowedSortOrder = ['asc', 'desc'];
+
         const token = Cookies.get("token");
-        const url = `${process.env.REACT_APP_API_URL}/api/tasks`;
+        let url = `${process.env.REACT_APP_API_URL}/api/tasks`;
+
+        let queryParams = [];
+        if (allowedStatus.includes(statusFilter)) {
+            queryParams.push(`status=${statusFilter}`);
+        }
+
+        if (allowedPriority.includes(priorityFilter)) {
+            queryParams.push(`priority=${priorityFilter}`);
+        }
+
+        if(allowedSort.includes(sortBy)){
+            queryParams.push(`sortBy=${sortBy}`);
+            if (allowedSortOrder.includes(sortOrder)) queryParams.push(`sortOrder=${sortOrder}`);
+            else queryParams.push('sortOrder=asc');
+        }
+
+        if (queryParams.length > 0) {
+            url += `?${queryParams.join("&")}`;
+        }
+
         const options = {
             method: "GET",
             headers: {
@@ -49,6 +78,22 @@ class Dashboard extends Component{
         }
     }
 
+    onChangeStatus = status => {
+        this.setState({statusFilter: status}, this.getTaskList);
+    }
+
+    onChangePriority = priority => {
+        this.setState({priorityFilter: priority}, this.getTaskList);
+    }
+
+    onChangeSortBy = sortBy => {
+        this.setState({sortBy: sortBy}, this.getTaskList);
+    }
+
+    onChangeSortOrder = sortOrder => {
+        this.setState({sortOrder: sortOrder}, this.getTaskList);
+    }
+
     startEdit = task => {
         this.setState({editingTask: task})
     }
@@ -65,7 +110,7 @@ class Dashboard extends Component{
     }
 
     render(){
-        const {editingTask, tasksList} = this.state
+        const {editingTask, tasksList, statusFilter, priorityFilter} = this.state
         return (
             <div className="min-h-screen bg-gray-50">
 
@@ -80,7 +125,29 @@ class Dashboard extends Component{
                         refreshList={this.getTaskList}
                     />
 
-                    <TaskList startEdit={this.startEdit} tasksList={tasksList} refreshList={this.getTaskList} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                        <div className="lg:col-span-1">
+                            <TaskFilters 
+                                onChangePriority={this.onChangePriority} 
+                                onChangeStatus={this.onChangeStatus}
+                                onChangeSortBy={this.onChangeSortBy}
+                                onChangeSortOrder={this.onChangeSortOrder}
+                            />
+                        </div>
+
+                        <div className="lg:col-span-2">
+                            <TaskList 
+                                startEdit={this.startEdit} 
+                                tasksList={tasksList} 
+                                refreshList={this.getTaskList} 
+                                statusFilter={statusFilter}
+                                priorityFilter={priorityFilter}                                   
+                        />
+                        </div>
+
+                    </div>
+
 
                 </main>
 
