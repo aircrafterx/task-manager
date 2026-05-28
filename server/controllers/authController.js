@@ -5,6 +5,42 @@ const crypto = require("crypto");
 const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const generateEmail = verificationUrl => `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 20px;">
+        <div style="max-width: 500px; margin: auto; background: white; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <h1 style="color: #111827; margin-bottom: 20px;">
+                Verify Your Email
+            </h1>
+
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                Thanks for registering with AircrafterX Task Manager.
+                Please verify your email to continue.
+            </p>
+
+            <a
+                href="${verificationUrl}"
+                style="
+                    display: inline-block;
+                    background-color: #2563eb;
+                    color: white;
+                    text-decoration: none;
+                    padding: 14px 28px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                "
+            >
+                Verify Email
+            </a>
+
+            <p style="margin-top: 30px; color: #9ca3af; font-size: 13px;">
+                If you did not create this account,
+                you can safely ignore this email.
+            </p>
+
+        </div>
+    </div>
+`
 
 exports.register = async (req, res) => {
     try {
@@ -16,66 +52,43 @@ exports.register = async (req, res) => {
 
         const hashedPsswd = await bcrypt.hash(password, 10);
         const verificationToken = crypto.randomBytes(32).toString("hex");
-        
-        let result = await db.query(`
+
+        const dbUser = await db.query(`
+            SELECT is_verified, is_deleted
+            FROM users
+            WHERE email = $1
+        `, [email]);
+
+        let result;
+
+        if (dbUser.rows.length === 0) {
+            result = await db.query(`
+                INSERT INTO users(email, password, verification_token, verification_sent_at) 
+                VALUES($1, $2, $3, NOW()) 
+                RETURNING id, email`, [email, hashedPsswd, verificationToken]
+            );
+        } else if(dbUser.rows[0].is_verified && !dbUser.rows[0].is_deleted){
+            return res.status(200).json({message: "Account already verified, Please login!"});
+        } else if(!dbUser.rows[0].is_verified && !dbUser.rows[0].is_deleted){
+            return res.status(400).json({message: "Verification pending", code: "VERIFICATION_PENDING"});
+        } else if(dbUser.rows[0].is_deleted){
+            result = await db.query(`
                 UPDATE users
                 SET
                     password = $1,
                     verification_token = $2,
+                    verification_sent_at = NOW(),
                     is_verified = false,
                     is_deleted = false
                 WHERE email = $3
                 AND is_deleted = true
                 RETURNING id, email
             `, [hashedPsswd, verificationToken, email]
-        );
-
-        if(result.rows.length === 0) {
-            result = await db.query(`
-                INSERT INTO users(email, password, verification_token) 
-                VALUES($1, $2, $3) 
-                RETURNING id, email`, [email, hashedPsswd, verificationToken]
             );
-        } 
-
+        }
+        
         const verificationUrl = `${process.env.SERVER_URL}/api/auth/verify/${verificationToken}`;
-
-        const emailHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 20px;">
-                <div style="max-width: 500px; margin: auto; background: white; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-
-                    <h1 style="color: #111827; margin-bottom: 20px;">
-                        Verify Your Email
-                    </h1>
-
-                    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-                        Thanks for registering with AircrafterX Task Manager.
-                        Please verify your email to continue.
-                    </p>
-
-                    <a
-                        href="${verificationUrl}"
-                        style="
-                            display: inline-block;
-                            background-color: #2563eb;
-                            color: white;
-                            text-decoration: none;
-                            padding: 14px 28px;
-                            border-radius: 8px;
-                            font-weight: bold;
-                        "
-                    >
-                        Verify Email
-                    </a>
-
-                    <p style="margin-top: 30px; color: #9ca3af; font-size: 13px;">
-                        If you did not create this account,
-                        you can safely ignore this email.
-                    </p>
-
-                </div>
-            </div>
-            `;
+        const emailHtml = generateEmail(verificationUrl);
 
         const mailRes = await resend.emails.send({
             from: `AircrafterX <${process.env.AUTH_EMAIL}>`,
@@ -135,6 +148,81 @@ exports.verifyRegister = async (req, res) => {
         return res.redirect(
             `${process.env.CLIENT_URL}/auth?verification=error`
         );
+    }
+}
+
+
+exports.resendVerification = async (req, res) => {
+    try{
+        let {email} = req.body;
+
+        if (!email) return res.status(400).json({ message: "No email Provided" });
+        email = email.toLowerCase().trim();
+
+        const dbUser = await db.query(`
+            SELECT is_verified, verification_sent_at
+            FROM users
+            WHERE email = $1
+        `, [email]);
+
+        if(dbUser.rows.length === 0){
+            return res.status(400).json({message: "Email doesn't exist"});
+        }
+
+        if(dbUser.rows[0].is_verified){
+            return res.status(400).json({message: "Account already verified"});
+        }
+
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const verificationUrl = `${process.env.SERVER_URL}/api/auth/verify/${verificationToken}`;
+        const emailHtml = generateEmail(verificationUrl);
+
+        const result = await db.query(`
+                UPDATE users
+                SET
+                    verification_token = $1,
+                    verification_sent_at = NOW()
+                WHERE email = $2
+                AND is_verified = false
+                AND (
+                    verification_sent_at IS NULL 
+                    OR NOW() - verification_sent_at > INTERVAL '60 seconds'
+                )
+                RETURNING id;
+            `, [verificationToken, email]);
+
+        if(result.rows.length === 0){
+            return res.status(400).json({message: "Wait for cooldown time of 60 seconds."});
+        }
+
+        const mailRes = await resend.emails.send({
+            from: `AircrafterX <${process.env.AUTH_EMAIL}>`,
+            to: email,
+            subject: "Verify Your Email",
+            replyTo: "support@aircrafterx.cloud",
+            html: emailHtml,
+            text: `
+                    Hello,
+
+                    Thank you for creating an account on AircrafterX.
+
+                    Please verify your email address.
+
+                Regards,
+                AircrafterX Team
+            `
+        });
+
+        console.log(mailRes); 
+
+        if(!mailRes.error){
+            return res.status(200).json({message: "Verification email resent!"});
+        }else{
+            return res.status(500).json({message: "Failed email resent. Please try again later."});
+        }            
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({message: "Server Error"});
     }
 }
 

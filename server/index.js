@@ -34,6 +34,16 @@ const registerLimiter = rateLimit({
     legacyHeaders: false
 });
 
+const resendVerificationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: {
+        message: "Too many verification email requests. Please try again later.",
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
 const taskRoutes = require("./routes/tasks");
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -52,6 +62,7 @@ app.use(limiter);
 
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register", registerLimiter);
+app.use("/api/auth/resend-verification", resendVerificationLimiter);
 
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`);
