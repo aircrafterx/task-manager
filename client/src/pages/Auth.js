@@ -56,6 +56,27 @@ class Auth extends Component{
 
                     {login ? <LoginForm /> : <RegisterForm />}
 
+                    <div className="mt-2 pt-4 border-t border-gray-100 text-center text-sm">
+                        <span className="text-gray-500">
+                            {login ? "New user?" : "Already have an account?"}
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={login ? this.onClickRegister : this.onClickLogin}
+                            className="
+                                ml-1
+                                text-gray-900
+                                font-medium
+                                hover:text-gray-700
+                                hover:underline
+                                transition
+                            "
+                        >
+                            {login ? "Register" : "Login"}
+                        </button>
+                    </div>
+
                 </div>
 
             </div>
