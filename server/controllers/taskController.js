@@ -13,7 +13,7 @@ const today = new Date().toISOString().split("T")[0];
 
 exports.getAllTasks = async (req, res) => {
     try{
-        let {status, priority, sortBy, sortOrder} = req.query;
+        let {status, priority, sortBy, sortOrder, page} = req.query;
         const userId = req.user.id;
 
         let selectTasks = `
@@ -24,14 +24,26 @@ exports.getAllTasks = async (req, res) => {
         `;
         let params = [userId];
 
+        let metaData = `
+            SELECT count(id) as total_tasks
+            FROM tasks
+            WHERE user_id = $1
+            AND is_deleted = false
+        `;
+        let metaParams = [userId];
+
         if(allowedStatus.includes(status)){
             selectTasks += ` AND status = $${params.length + 1}`;
             params.push(status);
+            metaData += ` AND status = $${metaParams.length + 1}`;
+            metaParams.push(status);
         }
 
         if(allowedPriority.includes(priority)){
             selectTasks += ` AND priority = $${params.length + 1}`;
             params.push(priority);
+            metaData += ` AND priority = $${metaParams.length + 1}`;
+            metaParams.push(priority);
         }
 
         if(!allowedSortOrder.includes(sortOrder)) sortOrder = 'asc';
@@ -39,10 +51,33 @@ exports.getAllTasks = async (req, res) => {
         if(allowedSort.includes(sortBy)){
             if (sortBy === 'title') selectTasks += ` ORDER BY LOWER(${sortBy}) ${sortOrder}`;
             else selectTasks += ` ORDER BY ${sortBy} ${sortOrder}`;
+        }else{
+            selectTasks += `    ORDER BY created_at DESC    `;
+        }
+
+        if(Number(page) > 0){ 
+            selectTasks += ` 
+                OFFSET $${params.length + 1}
+                LIMIT 8
+            `;
+            params.push((page - 1) * 9);
+        }else{
+            selectTasks += ` 
+                OFFSET 0
+                LIMIT 8
+            `;
         }
 
         const result = await db.query(selectTasks, params);
-        res.json(result.rows);
+        const meta = await db.query(metaData, metaParams);
+
+        const totalTasks = Number(meta.rows[0].total_tasks);
+        res.json({
+            tasks: result.rows,
+            totalTasks: totalTasks,
+            totalPages: Math.ceil(totalTasks / 9),
+            currentPage: Number(page) || 1,
+        });
     }catch(err){
         res.status(500).send({message: "Server Error"});
     }

@@ -9,14 +9,24 @@ import TaskFilters from '../components/TaskFilters'
 
 
 class Dashboard extends Component{
-    state = { editingTask: null, tasksList: [], statusFilter: '', priorityFilter: '', sortBy: '', sortOrder: '' }
+    state = { 
+        editingTask: null, 
+        tasksList: [], 
+        totalTasks: 0, 
+        totalPages: 0, 
+        currentPage: 1, 
+        statusFilter: '', 
+        priorityFilter: '', 
+        sortBy: '', 
+        sortOrder: '' 
+    }
     
     componentDidMount(){
         this.getTaskList();
     }
 
     getTaskList = async () => {
-        const {statusFilter, priorityFilter, sortBy, sortOrder} = this.state;
+        const {statusFilter, priorityFilter, sortBy, sortOrder, currentPage} = this.state;
         const allowedStatus = ['pending', 'completed', 'overdue'];
         const allowedPriority = ['low', 'high', 'medium'];
         const allowedSort = ['due_date', 'title'];
@@ -25,7 +35,7 @@ class Dashboard extends Component{
         const token = Cookies.get("token");
         let url = `${process.env.REACT_APP_API_URL}/api/tasks`;
 
-        let queryParams = [];
+        let queryParams = [`page=${currentPage}`];
         if (allowedStatus.includes(statusFilter)) {
             queryParams.push(`status=${statusFilter}`);
         }
@@ -62,7 +72,7 @@ class Dashboard extends Component{
         }
 
         if (response.ok) {
-            const formattedRows = data.map(each => ({
+            const formattedRows = data.tasks.map(each => ({
                 id: each.id,
                 title: each.title,
                 description: each.description,
@@ -71,7 +81,12 @@ class Dashboard extends Component{
                 dueDate: each.due_date ? each.due_date.split("T")[0] : "",
 
             }))
-            this.setState({ tasksList: formattedRows });
+            this.setState({ 
+                tasksList: formattedRows, 
+                totalTasks: data.totalTasks, 
+                totalPages: data.totalPages, 
+                currentPage: data.currentPage 
+            });
             console.log(data)
         } else {
             console.log(data.message);
@@ -110,7 +125,7 @@ class Dashboard extends Component{
     }
 
     render(){
-        const {editingTask, tasksList, statusFilter, priorityFilter} = this.state
+        const {editingTask, tasksList, statusFilter, priorityFilter, currentPage, totalPages, totalTasks} = this.state
         return (
             <div className="min-h-screen bg-gray-50">
 
@@ -142,8 +157,93 @@ class Dashboard extends Component{
                                 tasksList={tasksList} 
                                 refreshList={this.getTaskList} 
                                 statusFilter={statusFilter}
-                                priorityFilter={priorityFilter}                                   
-                        />
+                                priorityFilter={priorityFilter}
+                                totalTasks={totalTasks}                                   
+                            />
+
+                            <div className="mt-6 flex items-center justify-center gap-2">
+
+                                <button
+                                    type="button"
+                                    disabled={currentPage === 1}
+                                    onClick={() => {
+                                        this.setState(
+                                            prev => ({ currentPage: prev.currentPage - 1 }),
+                                            this.getTaskList
+                                        );
+                                    }}
+                                    className="
+                                        px-3 py-1.5
+                                        text-sm
+                                        border border-gray-300
+                                        rounded-md
+                                        bg-white
+                                        hover:bg-gray-100
+                                        disabled:opacity-40
+                                        disabled:cursor-not-allowed
+                                    "
+                                >
+                                    Prev
+                                </button>
+
+                                <div className="flex items-center gap-1">
+
+                                    {[...Array(totalPages)].map((_, index) => {
+                                        const pageNumber = index + 1;
+
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                type="button"
+                                                onClick={() => {
+                                                    this.setState(
+                                                        { currentPage: pageNumber },
+                                                        this.getTaskList
+                                                    );
+                                                }}
+                                                className={`
+                                                    w-9 h-9
+                                                    text-sm
+                                                    rounded-md
+                                                    border
+                                                    transition
+                                                    ${currentPage === pageNumber
+                                                        ? "bg-gray-900 text-white border-gray-900"
+                                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                                    }
+                    `}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        );
+                                    })}
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => {
+                                        this.setState(
+                                            prev => ({ currentPage: prev.currentPage + 1 }),
+                                            this.getTaskList
+                                        );
+                                    }}
+                                    className="
+                                        px-3 py-1.5
+                                        text-sm
+                                        border border-gray-300
+                                        rounded-md
+                                        bg-white
+                                        hover:bg-gray-100
+                                        disabled:opacity-40
+                                        disabled:cursor-not-allowed
+                                    "
+                                >
+                                    Next
+                                </button>
+
+                            </div>
                         </div>
 
                     </div>

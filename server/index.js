@@ -37,12 +37,15 @@ const registerLimiter = rateLimit({
 const resendVerificationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 3,
+    keyGenerator: (req) => {
+        return req.body.email || req.ip;
+    },
     message: {
         message: "Too many verification email requests. Please try again later.",
     },
     standardHeaders: true,
     legacyHeaders: false,
-})
+});
 
 const taskRoutes = require("./routes/tasks");
 const authRoutes = require('./routes/auth');

@@ -44,13 +44,26 @@ class TaskList extends Component{
     }
 
     render() {
-        const { startEdit, tasksList, statusFilter, priorityFilter } = this.props;
+        const { startEdit, tasksList, statusFilter, priorityFilter, totalTasks } = this.props;
         const filtersApplied = (statusFilter !== "") || (priorityFilter !== "");
         return (
             <div>
 
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     Your Tasks
+
+                    <span
+                        className="
+                            px-2.5 py-0.5
+                            text-xs font-medium
+                            bg-gray-100
+                            text-gray-700
+                            border border-gray-300
+                            rounded-full
+                        "
+                    >
+                        {totalTasks}
+                    </span>
                 </h2>
 
                 {tasksList.length === 0 ? (
